@@ -1,13 +1,16 @@
-#!/usr/bin/env ruby
-
 require 'date'
-require 'optparse'
 require 'json'
+require_relative "time_elapsed"
 
-class Backup < Struct.new(:options)
-  def perform
+class Restore < Struct.new(:options)
+  include TimeElapsed
+
+  def run
     @now = Time.now.to_i
     puts "\e[H\e[2J"
+
+    puts "(Temp. hack) Cleaning up zombie zfs volumes..."
+    `#{File.join(File.expand_path("..", File.dirname(__FILE__)), "zfs-cleanup.sh")}`
 
     if existing_namespaces.any?
       puts "WARNING: The namespaces [#{existing_namespaces.join(", ")}] already exist. Make sure none of the namespaces to restore already exist."
@@ -35,7 +38,7 @@ class Backup < Struct.new(:options)
   private
 
   def all_backups_in_schedule
-    @all_backups_in_schedule ||= `kubectl -n velero get backup --selector 'velero.io/schedule-name=daily' --sort-by=.status.completionTimestamp -o jsonpath='{.items[*].metadata.name}'`.split
+    @all_backups_in_schedule ||= `kubectl -n velero get backup --selector 'velero.io/schedule-name=#{schedule_name}' --sort-by=.status.completionTimestamp -o jsonpath='{.items[*].metadata.name}'`.split
   end
 
   def pvs_by_backup
@@ -98,16 +101,6 @@ class Backup < Struct.new(:options)
     included_namespaces & `kubectl get ns -o jsonpath='{.items[*].metadata.name}'`.split
   end
 
-  def humanize secs
-    [[60, :seconds], [60, :minutes], [24, :hours], [Float::INFINITY, :days]].map{ |count, name|
-      if secs > 0
-        secs, n = secs.divmod(count)
-
-        "#{n.to_i} #{name}" unless n.to_i==0
-      end
-    }.compact.reverse.join(' ')
-  end
-
   def set_target_ip
     pod_name = `kubectl -n openebs get pod -l app=cstor-pool -o jsonpath='{.items[0].metadata.name}'`
     pool_name = `kubectl -n openebs exec -it #{pod_name} -c cstor-pool -- zpool list -Ho name`.chop
@@ -126,13 +119,3 @@ class Backup < Struct.new(:options)
     end
   end
 end
-
-options = {}
-
-OptionParser.new do |opt|
-  opt.on('--backup BACKUP') { |o| options[:backup] = o }
-  opt.on('--include-namespaces INCLUDE_NAMESPACES') { |o| options[:included_namespaces] = o.split(",") }
-end.parse!
-
-backup = Backup.new(options)
-backup.perform

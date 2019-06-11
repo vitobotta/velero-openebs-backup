@@ -10,8 +10,11 @@ class Backup < Struct.new(:options)
 
     label_volumes
 
-    backup_command = "velero schedule create #{options[:backup]} --include-namespaces #{included_namespaces.join(",")} --exclude-resources=orders.certmanager.k8s.io,challenges.certmanager.k8s.io --snapshot-volumes --volume-snapshot-locations=default"
-    backup_command << " --schedule='#{options[:schedule]}'" unless options[:schedule]
+    backup_command = if options[:schedule]
+      "velero schedule create #{options[:backup]} --schedule='#{options[:schedule]}' --include-namespaces #{included_namespaces.join(",")} --exclude-resources=orders.certmanager.k8s.io,challenges.certmanager.k8s.io --snapshot-volumes --volume-snapshot-locations=default"
+    else
+      "velero backup create #{options[:backup]} --include-namespaces #{included_namespaces.join(",")} --exclude-resources=orders.certmanager.k8s.io,challenges.certmanager.k8s.io --snapshot-volumes --volume-snapshot-locations=default --wait"
+    end
 
     puts "Backup in progress...." unless options[:schedule]
 

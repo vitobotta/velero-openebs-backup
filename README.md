@@ -25,7 +25,7 @@ I use these scripts so I don't have to remember all the parameters and additiona
 ### Schedule a backup
 
 ```
-./backup.rb --backup <schedule name> --include-namespaces <namespaces> --schedule '0 5 0 0 0'
+./backup.rb --backup <schedule name> --include-namespaces <namespaces> --schedule '0 5 * * *'
 ```
 
 ### Restore

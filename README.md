@@ -10,8 +10,9 @@ I use these scripts so I don't have to remember all the parameters and additiona
 
 - The backup script excludes a couple of `cert-manager` related resources that otherwise will cause restores to fail when certificates are involved. This doesn't affect the restore of certificates etc which will work just fine after restoring;
 
-- The restore script sets the target ip of the volumes after restoring, as described in the link above.
+- The restore script sets the target ip of the volumes after restoring, as described in the link above;
 
+- The restore script, before restoring, cleans up any zfs volumes not deleted automatically when deleting pvcs; this is a known issue which will be fixed in the next OpenEBS release.
 
 ## Usage
 

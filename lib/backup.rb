@@ -21,7 +21,7 @@ class Backup < Struct.new(:options)
     `#{backup_command}`
 
     if options[:schedule]
-      backup_name = `kubectl -n velero get backup --selector 'velero.io/schedule-name=#{options[:backup]}' --sort-by=.status.completionTimestamp -o jsonpath='{.items[*].metadata.name}'`.split.first
+      backup_name = `kubectl -n velero get backup --selector 'velero.io/schedule-name=#{options[:backup]}' --sort-by=.status.startTimestamp -o jsonpath='{.items[*].metadata.name}'`.split.first
       puts "Backup scheduled and started. Run `velero describe backup #{backup_name} --details` for progress about the current backup."
     else
       elapsed = Time.now.to_i - @now
